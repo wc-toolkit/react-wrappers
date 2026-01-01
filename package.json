@@ -1,0 +1,91 @@
+{
+  "name": "@wc-toolkit/react-wrappers",
+  "version": "0.0.0",
+  "description": "React wrapper generator for web components using the custom Elements Manifest (CEM).",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "/dist"
+  ],
+  "scripts": {
+    "analyze": "npm run build && cem analyze --globs demo/src/**/*.js --outdir demo",
+    "changeset": "changeset add",
+    "build": "tsup src/index.ts --dts --format cjs,esm",
+    "clean": "git clean -fdX",
+    "deploy": "npm run build && npm publish",
+    "demo": "npm run build && node ./demo/generate-wrappers.js",
+    "format": "prettier . --write",
+    "lint": "eslint 'src/**/*.ts'",
+    "lint:fix": "eslint 'src/**/*.ts' --fix",
+    "test": "vitest --run --passWithNoTests",
+    "prepare": "husky",
+    "release": "pnpm run build && changeset publish --access=public"
+  },
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wc-toolkit/react-wrappers.git"
+  },
+  "bugs": {
+    "url": "https://github.com/wc-toolkit/react-wrappers/issues"
+  },
+  "homepage": "https://wc-toolkit.com/documentation/react-wrappers",
+  "devDependencies": {
+    "@changesets/cli": "^2.27.12",
+    "@eslint/js": "^9.19.0",
+    "@types/node": "^22.15.21",
+    "@wc-toolkit/cem-utilities": "^1.4.1",
+    "comment-parser": "^1.4.1",
+    "custom-elements-manifest": "2.1.0",
+    "eslint": "^9.19.0",
+    "eslint-config-prettier": "^10.0.1",
+    "husky": "^9.1.7",
+    "prettier": "3.4.2",
+    "tsup": "^8.3.6",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.21.0",
+    "vitest": "^3.0.4"
+  },
+  "dependencies": {
+    "@prettier/sync": "^0.6.1"
+  },
+  "keywords": [
+    "custom-elements",
+    "custom-elements-manifest",
+    "cem",
+    "web-components",
+    "components",
+    "cem",
+    "jsx",
+    "react-wrappers",
+    "react",
+    "preact",
+    "stenciljs",
+    "@wc-toolkit/react-wrappers"
+  ],
+  "lint-staged": {
+    "*.ts": "eslint --cache --fix",
+    "*.--write": "prettier --write"
+  },
+  "publishConfig": {
+    "provenance": true,
+    "access": "public"
+  }
+}
