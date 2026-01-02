@@ -344,7 +344,7 @@ function getReactComponentTemplate(
       ${useRef ? `const ref = useRef(null);` : ""}
       ${
         has(unusedProps)
-          ? `const { ${unusedProps.join(", ")}, ...restProps } = props;`
+          ? `const { ref, ${unusedProps.join(", ")}, ...restProps } = props;`
           : ""
       }
       ${config.scopedTags ? "const scope = useContext(ScopeContext);" : ""}
@@ -416,7 +416,7 @@ function getTypeDefinitionTemplate(
 
     export type {
       ${formattedComponentName}Element
-      ${eventTypes?.length && !config.stronglyTypedEvents ? `, ${eventTypes}` : ""}
+      ${eventTypes?.length ? `, ${eventTypes}` : ""}
     };
 
     export interface ${formattedComponentName}Props ${getExtendedProps()} {
@@ -457,7 +457,7 @@ function getCssProperties(component: Component): string {
 
 function getEventTypes(
   component: Component,
-): Array<{ name: string; type: string }> {
+): Array<{ name: string; type: string; isClassExtension: boolean }> {
   const eventTypes = component?.events?.map((event) => ({
     name: event.name,
     type: event?.type?.text,
@@ -476,6 +476,9 @@ function getEventTypes(
     )
     .map((eventType) => {
       return {
+        isClassExtension:
+          !eventType.type.startsWith("CustomEvent<") &&
+          !eventType.type.startsWith("{"),
         name: eventType.name,
         type: eventType.type.replace(/CustomEvent\s*<\s*([^>]+?)\s*>/g, "$1"),
       };
@@ -489,6 +492,7 @@ function getStronglyTypedEvents(
   if (!component.events?.length) {
     return "";
   }
+
   const eventTypes = getEventTypes(component);
   const types: string[] = [
     `/**
@@ -502,13 +506,17 @@ function getStronglyTypedEvents(
      > = CustomEvent<D> & {
        target: T;
      };`,
-    `/** \`${componentName}\` custom event */
+    `/** \`${componentName}\` component event */
      export type ${componentName}Event<D = unknown> = TypedEvent<${componentName}Element, D>;`,
   ];
 
   eventTypes.forEach((eventType) => {
-    types.push(`/** ${eventType} event type */
-      export type ${componentName}${toPascalCase(eventType.name)}Event = ${componentName}Event<${eventType.type}>;`);
+    types.push(
+      eventType.isClassExtension
+        ? `export type ${eventType.type};`
+        : `/** \`${eventType.name}\` event type */
+      export type ${componentName}${toPascalCase(eventType.name)}Event = ${componentName}Event<${eventType.type}>;`,
+    );
   });
 
   return types.join("\n");
