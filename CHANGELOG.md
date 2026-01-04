@@ -1,5 +1,11 @@
 # @wc-toolkit/react-wrappers
 
+## 1.1.1
+
+### Patch Changes
+
+- 2fb2394: Fixed `ref` declaration to prevent it from being `undefined`
+
 ## 1.1.0
 
 ### Minor Changes
