@@ -321,13 +321,12 @@ function getReactComponentTemplate(
   const attrTemplates = getAttributeTemplates(attributes);
   const propTemplates = getPropTemplates(properties);
   const unusedProps = getUnusedProps(attributes, booleanAttributes, properties);
-  const useRef = has(eventTemplates) || has(propTemplates);
 
   return `
     ${config.ssrSafe ? '"use client"' : ""}
     import React, { forwardRef ${
       config.ssrSafe ? ", useEffect" : ""
-    } ${useRef ? ", useRef" : ""} ${config.scopedTags ? ", useContext" : ""} } from "react";
+    }, useRef ${config.scopedTags ? ", useContext" : ""} } from "react";
     ${!config.ssrSafe ? `import '${modulePath}';` : ""}
     import {
       ${has(eventTemplates) ? "useEventListener," : ""}
@@ -341,10 +340,10 @@ function getReactComponentTemplate(
     }
 
     export const ${getFormattedComponentName(component)} = forwardRef((props, forwardedRef) => {
-      ${useRef ? `const ref = useRef(null);` : ""}
+      const ref = useRef(null);
       ${
         has(unusedProps)
-          ? `const { ref, ${unusedProps.join(", ")}, ...restProps } = props;`
+          ? `const { ${unusedProps.join(", ")}, ...restProps } = props;`
           : ""
       }
       ${config.scopedTags ? "const scope = useContext(ScopeContext);" : ""}
