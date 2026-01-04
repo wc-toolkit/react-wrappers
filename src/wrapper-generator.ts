@@ -181,7 +181,10 @@ function getProperties(
 
 function getEventNames(component: Component): EventName[] {
   return (
-    component?.events?.map((event) => {
+    component?.events
+    /** Manifest can contain events without names (e.g. with `Event` subclasses) */
+    ?.filter((event) => event.name)
+    ?.map((event) => {
       return {
         name: event.name,
         reactName: createEventName(event),
