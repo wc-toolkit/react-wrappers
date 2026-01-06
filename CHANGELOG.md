@@ -1,5 +1,15 @@
 # @wc-toolkit/react-wrappers
 
+## 1.2.0
+
+### Minor Changes
+
+- ff21217: Updated event typing to strongly type the `target` for any event type
+
+### Patch Changes
+
+- ff21217: Fixed issue where there are events with missing names
+
 ## 1.1.1
 
 ### Patch Changes
