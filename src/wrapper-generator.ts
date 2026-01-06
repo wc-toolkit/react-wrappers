@@ -181,14 +181,16 @@ function getProperties(
 
 function getEventNames(component: Component): EventName[] {
   return (
-    component?.events?.map((event) => {
-      return {
-        name: event.name,
-        reactName: createEventName(event),
-        description: event.description,
-        type: event.type?.text,
-      };
-    }) || []
+    component?.events
+      ?.filter((e) => e.name)
+      ?.map((event) => {
+        return {
+          name: event.name,
+          reactName: createEventName(event),
+          description: event.description,
+          type: event.type?.text,
+        };
+      }) || []
   );
 }
 
@@ -479,7 +481,9 @@ function getEventTypes(
           !eventType.type.startsWith("CustomEvent<") &&
           !eventType.type.startsWith("{"),
         name: eventType.name,
-        type: eventType.type.replace(/CustomEvent\s*<\s*([^>]+?)\s*>/g, "$1"),
+        type: eventType.type.startsWith("{")
+          ? `CustomEvent<${eventType.type}>`
+          : eventType.type,
       };
     });
 }
@@ -501,19 +505,17 @@ function getStronglyTypedEvents(
       */
      type TypedEvent<
        T extends EventTarget,
-       D = unknown
-     > = CustomEvent<D> & {
+       E = Event
+     > = E & {
        target: T;
      };`,
     `/** \`${componentName}\` component event */
-     export type ${componentName}Event<D = unknown> = TypedEvent<${componentName}Element, D>;`,
+     export type ${componentName}Event<E = Event> = TypedEvent<${componentName}Element, E>;`,
   ];
 
   eventTypes.forEach((eventType) => {
     types.push(
-      eventType.isClassExtension
-        ? `export type ${eventType.type};`
-        : `/** \`${eventType.name}\` event type */
+      `/** \`${eventType.name}\` event type */
       export type ${componentName}${toPascalCase(eventType.name)}Event = ${componentName}Event<${eventType.type}>;`,
     );
   });
