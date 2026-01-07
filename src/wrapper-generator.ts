@@ -510,13 +510,13 @@ function getStronglyTypedEvents(
        target: T;
      };`,
     `/** \`${componentName}\` component event */
-     export type ${componentName}Event<E = Event> = TypedEvent<${componentName}Element, E>;`,
+     export type ${componentName}ElementEvent<E = Event> = TypedEvent<${componentName}Element, E>;`,
   ];
 
   eventTypes.forEach((eventType) => {
     types.push(
       `/** \`${eventType.name}\` event type */
-      export type ${componentName}${toPascalCase(eventType.name)}Event = ${componentName}Event<${eventType.type}>;`,
+      export type ${componentName}${toPascalCase(eventType.name)}ElementEvent = ${componentName}ElementEvent<${eventType.type}>;`,
     );
   });
 
@@ -682,12 +682,12 @@ function getEventType(
   }
 
   const base = config.stronglyTypedEvents
-    ? `${componentName}Event`
+    ? `${componentName}ElementEvent`
     : "CustomEvent";
 
   if (!eventType || eventType === "Event" || eventType === "CustomEvent") {
     return base;
   }
 
-  return base + `${componentName}${toPascalCase(eventName)}Event`;
+  return base + `${componentName}${toPascalCase(eventName)}ElementEvent`;
 }
