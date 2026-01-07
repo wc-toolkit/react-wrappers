@@ -1,5 +1,11 @@
 # @wc-toolkit/react-wrappers
 
+## 1.2.1
+
+### Patch Changes
+
+- 16fd791: Added `Element` to strongly typed event names to prevent collisions with other event names
+
 ## 1.2.0
 
 ### Minor Changes
