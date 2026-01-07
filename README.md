@@ -6,7 +6,7 @@
 
 # WC Toolkit React Wrappers
 
-![demo of the react wrappers](../../../assets/react-wrappers-demo.gif)
+![demo of the react wrappers](https://wc-toolkit.com/_astro/react-wrappers-demo.BAQXbZXV_Z1IaBW9.webp)
 
 This package generates ergonomic React wrappers for your Web Components straight from a Custom Elements Manifest (CEM) with not additional configurations or setup in your components. This package plugs into the CEM Analyzer flow or can be called programmatically to emit React components, types, and optional scoping utilities.
 
