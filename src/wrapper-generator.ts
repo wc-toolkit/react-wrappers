@@ -306,8 +306,13 @@ function getAttributeTemplates(attributes: MappedAttribute[]) {
 
 function getPropTemplates(properties?: ClassField[]) {
   return properties?.map(
-    (member) => `useProperties(ref, '${member.name}', ${member.name});`,
+    (member) => `useProperties(ref, '${member.name}', ${getMappedPropName(member.name)});`,
   );
+}
+
+function getMappedPropName(propName: string) {
+  const mappedProp = MAPPED_PROPS.find((x) => x.name === propName);
+  return mappedProp ? mappedProp.propName : propName;
 }
 
 function getReactComponentTemplate(
