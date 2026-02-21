@@ -1,5 +1,11 @@
 # @wc-toolkit/react-wrappers
 
+## 1.2.2
+
+### Patch Changes
+
+- 34f2302: Fixed mapping `for` property to `htmlFor`
+
 ## 1.2.1
 
 ### Patch Changes
