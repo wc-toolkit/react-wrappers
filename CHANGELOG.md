@@ -1,5 +1,11 @@
 # @wc-toolkit/react-wrappers
 
+## 1.2.3
+
+### Patch Changes
+
+- af30010: Fixed attribute mapping for `for` to `htmlFor` prop
+
 ## 1.2.2
 
 ### Patch Changes
