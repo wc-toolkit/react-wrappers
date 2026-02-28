@@ -298,7 +298,7 @@ function getAttributeTemplates(attributes: MappedAttribute[]) {
       .map(
         (attr) =>
           `'${attr.originalName || attr?.name}': ${
-            attr.fieldName
+            attr.fieldName === 'for' ? `htmlFor` : attr.fieldName
           } ${attr.name.includes("-") ? `?? props['${attr.name}']` : ""}`,
       ) || []
   );
@@ -562,7 +562,7 @@ function getUnusedProps(
 ) {
   return [
     ...[...(booleanAttributes || []), ...(attributes || [])].map(
-      (x) => x.fieldName,
+      (x) => x.fieldName === "for" ? "htmlFor" : x.fieldName,
     ),
     ...(properties || []).map((x) => x.name),
   ]?.filter(
