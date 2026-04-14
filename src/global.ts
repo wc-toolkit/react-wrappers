@@ -64,6 +64,101 @@ export const MAPPED_PROPS: MappedAttribute[] = [
       text: "number",
     },
   },
+  {
+    name: "readonly",
+    propName: "readOnly",
+    fieldName: "readOnly",
+    description:
+      "Indicates that the user cannot modify the value of the control.",
+    type: {
+      text: "boolean",
+    },
+  },
+  {
+    name: "autofocus",
+    propName: "autoFocus",
+    fieldName: "autoFocus",
+    description:
+      "Indicates that the element should be focused when the page has loaded.",
+    type: {
+      text: "boolean",
+    },
+  },
+  {
+    name: "spellcheck",
+    propName: "spellCheck",
+    fieldName: "spellCheck",
+    description:
+      "Controls whether the element should have spelling and grammar checked.",
+    type: {
+      text: "boolean",
+    },
+  },
+  {
+    name: "minlength",
+    propName: "minLength",
+    fieldName: "minLength",
+    description:
+      "Defines the minimum number of characters accepted for text input.",
+    type: {
+      text: "number",
+    },
+  },
+  {
+    name: "maxlength",
+    propName: "maxLength",
+    fieldName: "maxLength",
+    description:
+      "Defines the maximum number of characters accepted for text input.",
+    type: {
+      text: "number",
+    },
+  },
+  {
+    name: "autocomplete",
+    propName: "autoComplete",
+    fieldName: "autoComplete",
+    description:
+      "Specifies what permission the browser has to provide assistance in filling out form field values.",
+  },
+  {
+    name: "autocapitalize",
+    propName: "autoCapitalize",
+    fieldName: "autoCapitalize",
+    description:
+      "Controls whether and how text input is automatically capitalized as it is entered by the user.",
+  },
+  {
+    name: "autocorrect",
+    propName: "autoCorrect",
+    fieldName: "autoCorrect",
+    description:
+      "Indicates whether the browser's autocorrect feature is on or off.",
+  },
+  {
+    name: "inputmode",
+    propName: "inputMode",
+    fieldName: "inputMode",
+    description:
+      "Hints at the type of data that might be entered by the user while editing the element.",
+  },
+  {
+    name: "enterkeyhint",
+    propName: "enterKeyHint",
+    fieldName: "enterKeyHint",
+    description:
+      "Defines what action label or icon to present for the enter key on virtual keyboards.",
+  },
+];
+
+export const GLOBAL_MAPPED_PROP_NAMES = [
+  "className",
+  "exportparts",
+  "for",
+  "key",
+  "part",
+  "ref",
+  "tabindex",
 ];
 
 export const BASE_PROPS = [
