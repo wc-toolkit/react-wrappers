@@ -1,4 +1,9 @@
-import { BASE_PROPS, MAPPED_PROPS, NON_ATTR_BASE_PROPS } from "./global.js";
+import {
+  BASE_PROPS,
+  GLOBAL_MAPPED_PROP_NAMES,
+  MAPPED_PROPS,
+  NON_ATTR_BASE_PROPS,
+} from "./global.js";
 import {
   RESERVED_WORDS,
   createEventName,
@@ -163,19 +168,31 @@ function getProperties(
   attributes: MappedAttribute[],
   booleanAttributes: MappedAttribute[],
 ) {
-  const attributeFieldNames = attributes.map((attr) => attr.fieldName);
+  const attributeNames = attributes.flatMap((attr) => [
+    attr.name,
+    attr.fieldName,
+    attr.propName,
+  ]);
   return component?.members?.filter(
     (member) =>
       member.kind === "field" &&
       !member.static &&
       member.privacy !== "private" &&
       member.privacy !== "protected" &&
-      !attributeFieldNames.includes(member.name) &&
+      !attributeNames.includes(member.name) &&
       (member.description || member.deprecated) &&
       !booleanAttributes.find(
-        (x) => (x.fieldName || x.propName) === member.name,
+        (x) =>
+          x.name === member.name ||
+          x.fieldName === member.name ||
+          x.propName === member.name,
       ) &&
-      !attributes.find((x) => (x.fieldName || x.propName) === member.name),
+      !attributes.find(
+        (x) =>
+          x.name === member.name ||
+          x.fieldName === member.name ||
+          x.propName === member.name,
+      ),
   ) as ClassField[];
 }
 
@@ -229,6 +246,10 @@ function getAttributes(component: Component): ComponentAttributes {
 
 function addGlobalAttributes(attributes: MappedAttribute[]) {
   MAPPED_PROPS.forEach((baseAttr: MappedAttribute) => {
+    if (!GLOBAL_MAPPED_PROP_NAMES.includes(baseAttr.name)) {
+      return;
+    }
+
     if (!attributes.find((x) => x.name === baseAttr.name)) {
       attributes.push(baseAttr);
     }
@@ -245,6 +266,13 @@ function addAttribute(
   attribute: MappedAttribute,
   componentAttributes: ComponentAttributes,
 ) {
+  const mappedAttribute = MAPPED_PROPS.find((x) => x.name === attribute.name);
+
+  if (mappedAttribute) {
+    attribute.fieldName = mappedAttribute.fieldName;
+    attribute.propName = mappedAttribute.propName;
+  }
+
   const existingAttr = componentAttributes.attributes.find(
     (x) => x.name === attribute.name,
   );
@@ -256,7 +284,8 @@ function addAttribute(
     return;
   }
 
-  attribute.propName = toCamelCase(attribute.name);
+  attribute.propName = attribute.propName || toCamelCase(attribute.name);
+  attribute.fieldName = attribute.fieldName || attribute.propName;
 
   if (attribute?.type?.text.includes("boolean")) {
     componentAttributes.booleanAttributes.push(attribute);
@@ -295,12 +324,30 @@ function getAttributeTemplates(attributes: MappedAttribute[]) {
   return (
     attributes
       ?.filter((x) => !excludedProps.includes(x.name))
-      .map(
-        (attr) =>
-          `'${attr.originalName || attr?.name}': ${
-            attr.fieldName === 'for' ? `htmlFor` : attr.fieldName
-          } ${attr.name.includes("-") ? `?? props['${attr.name}']` : ""}`,
-      ) || []
+      .map((attr) => {
+        const outputName = attr.originalName || attr?.name;
+        const propValue = attr.fieldName === "for" ? "htmlFor" : attr.fieldName;
+        const fallbacks: string[] = [];
+
+        if (attr.name.includes("-")) {
+          fallbacks.push(`props['${attr.name}']`);
+        }
+
+        if (attr.name !== attr.fieldName) {
+          fallbacks.push(`props['${attr.name}']`);
+        }
+
+        if (attr.originalName && attr.originalName !== outputName) {
+          fallbacks.push(`props['${attr.originalName}']`);
+        }
+
+        const uniqueFallbacks = [...new Set(fallbacks)].join(" ?? ");
+        const valueTemplate = uniqueFallbacks
+          ? `${propValue} ?? ${uniqueFallbacks}`
+          : propValue;
+
+        return `'${outputName}': ${valueTemplate}`;
+      }) || []
   );
 }
 
