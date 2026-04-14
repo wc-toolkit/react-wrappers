@@ -1,5 +1,11 @@
 # @wc-toolkit/react-wrappers
 
+## 1.2.4
+
+### Patch Changes
+
+- fe2f9f0: Added additional HTML prop types to prevent type errors
+
 ## 1.2.3
 
 ### Patch Changes
