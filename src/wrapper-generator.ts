@@ -36,6 +36,12 @@ let config: ReactWrapperOptions = {};
 let globalEvents: GlobalEvent[] = [];
 let log: Logger;
 
+type PropLike = Pick<ClassField, "name" | "description" | "type"> & {
+  fieldName?: string;
+  propName?: string;
+  originalName?: string;
+};
+
 export function generateReactWrappers(
   customElementsManifest: unknown,
   options: ReactWrapperOptions,
@@ -168,31 +174,16 @@ function getProperties(
   attributes: MappedAttribute[],
   booleanAttributes: MappedAttribute[],
 ) {
-  const attributeNames = attributes.flatMap((attr) => [
-    attr.name,
-    attr.fieldName,
-    attr.propName,
-  ]);
+  const allAttributes = [...attributes, ...booleanAttributes];
+
   return component?.members?.filter(
     (member) =>
       member.kind === "field" &&
       !member.static &&
       member.privacy !== "private" &&
       member.privacy !== "protected" &&
-      !attributeNames.includes(member.name) &&
-      (member.description || member.deprecated) &&
-      !booleanAttributes.find(
-        (x) =>
-          x.name === member.name ||
-          x.fieldName === member.name ||
-          x.propName === member.name,
-      ) &&
-      !attributes.find(
-        (x) =>
-          x.name === member.name ||
-          x.fieldName === member.name ||
-          x.propName === member.name,
-      ),
+      !hasIdentifierConflict({ name: member.name }, allAttributes) &&
+      (member.description || member.deprecated),
   ) as ClassField[];
 }
 
@@ -250,10 +241,36 @@ function addGlobalAttributes(attributes: MappedAttribute[]) {
       return;
     }
 
-    if (!attributes.find((x) => x.name === baseAttr.name)) {
-      attributes.push(baseAttr);
-    }
+    pushIfUnique(attributes, baseAttr);
   });
+}
+
+function getPropIdentifiers({
+  name,
+  fieldName,
+  propName,
+  originalName,
+}: Partial<PropLike>) {
+  return [...new Set([name, fieldName, propName, originalName].filter(Boolean))] as string[];
+}
+
+function hasIdentifierConflict(
+  prop: Partial<PropLike>,
+  existingProps: Array<Partial<PropLike>>,
+) {
+  const propIdentifiers = new Set(getPropIdentifiers(prop));
+
+  return existingProps.some((existingProp) =>
+    getPropIdentifiers(existingProp).some((identifier) =>
+      propIdentifiers.has(identifier),
+    ),
+  );
+}
+
+function pushIfUnique<T extends Partial<PropLike>>(props: T[], prop: T) {
+  if (!hasIdentifierConflict(prop, props)) {
+    props.push(prop);
+  }
 }
 
 function throwKeywordException(attr: Attribute, component: Component) {
@@ -273,25 +290,23 @@ function addAttribute(
     attribute.propName = mappedAttribute.propName;
   }
 
-  const existingAttr = componentAttributes.attributes.find(
-    (x) => x.name === attribute.name,
-  );
-  const existingBool = componentAttributes.booleanAttributes.find(
-    (x) => x.name === attribute.name,
-  );
-
-  if (existingAttr || existingBool) {
-    return;
-  }
-
   attribute.propName = attribute.propName || toCamelCase(attribute.name);
   attribute.fieldName = attribute.fieldName || attribute.propName;
 
-  if (attribute?.type?.text.includes("boolean")) {
-    componentAttributes.booleanAttributes.push(attribute);
-  } else {
-    componentAttributes.attributes.push(attribute);
+  const target = attribute?.type?.text.includes("boolean")
+    ? componentAttributes.booleanAttributes
+    : componentAttributes.attributes;
+
+  if (
+    hasIdentifierConflict(attribute, [
+      ...componentAttributes.attributes,
+      ...componentAttributes.booleanAttributes,
+    ])
+  ) {
+    return;
   }
+
+  target.push(attribute);
 }
 
 function getMappedAttribute(attr: Attribute): MappedAttribute {
@@ -662,8 +677,14 @@ function getPropertyPropsTemplate(
   properties: ClassField[] | undefined,
   componentName: string,
 ) {
+  const dedupedProps: PropLike[] = [...(properties || [])];
+
+  (config.globalProps || []).forEach((globalProp) => {
+    pushIfUnique(dedupedProps, globalProp);
+  });
+
   return (
-    [...(properties || []), ...(config.globalProps || [])]?.map(
+    dedupedProps?.map(
       (prop) => `
     /** ${prop.description} */
     ${prop.name}?: ${
