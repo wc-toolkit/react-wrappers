@@ -1,5 +1,11 @@
 # @wc-toolkit/react-wrappers
 
+## 1.2.5
+
+### Patch Changes
+
+- fb4ed4b: Added logic to prevent duplicate props from being added
+
 ## 1.2.4
 
 ### Patch Changes
