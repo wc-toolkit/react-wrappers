@@ -335,7 +335,7 @@ function getBooleanAttributeTemplates(booleanAttributes: MappedAttribute[]) {
 }
 
 function getAttributeTemplates(attributes: MappedAttribute[]) {
-  const excludedProps = ["ref", "children", "key", "style", "className"];
+  const excludedProps = ["ref", "children", "key", "style"];
   return (
     attributes
       ?.filter((x) => !excludedProps.includes(x.name))
@@ -630,7 +630,7 @@ function getUnusedProps(
   ]?.filter(
     (prop) =>
       prop &&
-      !RESERVED_WORDS.includes(prop!) &&
+      (!RESERVED_WORDS.includes(prop!) || prop === "className") &&
       prop !== "for" &&
       prop !== "key",
   );
