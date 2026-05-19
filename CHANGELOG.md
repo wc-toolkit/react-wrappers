@@ -1,5 +1,13 @@
 # @wc-toolkit/react-wrappers
 
+## 1.2.6
+
+### Patch Changes
+
+- 523b66b: Fixed generated React wrappers so `className` is forwarded to the host `class`
+  attribute before a custom element is registered, and add coverage for the
+  generated output.
+
 ## 1.2.5
 
 ### Patch Changes
