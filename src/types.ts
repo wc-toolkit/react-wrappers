@@ -1,4 +1,5 @@
 import type { Attribute } from "custom-elements-manifest";
+import type React from "react";
 
 export interface ReactWrapperOptions {
   /** Used to get a specific path for a given component. Defaults to the component definition path in the CEM. */
@@ -61,4 +62,193 @@ export interface EventName {
   description?: string;
   type?: string;
   custom?: boolean;
+}
+
+export type RuntimePropMap = readonly string[] | Record<string, string>;
+
+export type RuntimeEventDescriptor<TDetail = unknown> =
+  | string
+  | {
+      name: string;
+      detail?: TDetail;
+    };
+
+/** Runtime event handlers must use React-style prop names (e.g. `onReady`). */
+export type RuntimeEventMap = Partial<
+  Record<`on${Capitalize<string>}`, RuntimeEventDescriptor>
+>;
+
+type RuntimeEmptyEventMap = Record<never, string>;
+
+export interface RuntimeManifestType {
+  text?: string;
+}
+
+export interface RuntimeManifestAttribute {
+  name: string;
+  fieldName?: string;
+  type?: RuntimeManifestType;
+}
+
+export interface RuntimeManifestEvent {
+  name: string;
+}
+
+export interface RuntimeManifestMember {
+  kind?: string;
+  name?: string;
+  privacy?: string;
+  static?: boolean;
+  attribute?: string;
+}
+
+export interface RuntimeManifestComponent {
+  kind?: string;
+  name: string;
+  tagName?: string;
+  customElement?: boolean;
+  attributes?: readonly RuntimeManifestAttribute[];
+  events?: readonly RuntimeManifestEvent[];
+  members?: readonly RuntimeManifestMember[];
+}
+
+export interface RuntimeManifestModule {
+  kind?: string;
+  path?: string;
+  declarations?: readonly RuntimeManifestComponent[];
+}
+
+export interface RuntimeManifest {
+  schemaVersion?: string;
+  readme?: string;
+  modules?: readonly RuntimeManifestModule[];
+}
+
+type RuntimeManifestDeclarations<TManifest> =
+  TManifest extends { modules?: readonly (infer TModule)[] }
+    ? TModule extends { declarations?: readonly (infer TDeclaration)[] }
+      ? TDeclaration
+      : never
+    : never;
+
+type RuntimeManifestCustomElementDeclarations<TManifest> = Extract<
+  RuntimeManifestDeclarations<TManifest>,
+  { name: string; tagName: string; customElement: true }
+>;
+
+export type RuntimeManifestClassNames<TManifest> = Extract<
+  RuntimeManifestCustomElementDeclarations<TManifest> extends { name: infer TName }
+    ? TName
+    : never,
+  string
+>;
+
+export interface RuntimeWrapperOptions<
+  TEvents extends RuntimeEventMap = RuntimeEventMap,
+  TBooleanAttributes extends readonly string[] = readonly string[],
+  TExtends extends string = string,
+> {
+  /** Optional attribute mapping. Includes `className` -> `class` and `htmlFor` -> `for` by default. */
+  attributes?: RuntimePropMap;
+  /** Optional list or map of React props that should be assigned as element properties instead of rendered attributes. */
+  properties?: RuntimePropMap;
+  /** Optional map of React event prop names to DOM event names. */
+  events?: TEvents;
+  /** Optional React prop names that should render as boolean attributes. */
+  booleanAttributes?: TBooleanAttributes;
+  /** Optional manifest class name to inherit API metadata from. */
+  extends?: TExtends;
+  /** Optional React display name override. */
+  displayName?: string;
+  /** Strict mode (default: true). If false, forwards unknown props as attributes. */
+  strict?: boolean;
+}
+
+export type RuntimeElementConstructor<TElement extends HTMLElement = HTMLElement> =
+  abstract new (...args: never[]) => TElement;
+
+type RuntimeFunction = (...args: never[]) => unknown;
+
+type NonFunctionPropertyNames<T> = {
+  [K in keyof T]-?: T[K] extends RuntimeFunction ? never : K;
+}[keyof T];
+
+export type RuntimeClassProps<TElement extends HTMLElement> = Partial<
+  Pick<TElement, Exclude<NonFunctionPropertyNames<TElement>, keyof HTMLElement>>
+>;
+
+type RuntimeEventHandler<TDescriptor> =
+  TDescriptor extends string
+    ? (event: Event) => void
+    : TDescriptor extends { detail: infer TDetail }
+      ? (event: CustomEvent<TDetail>) => void
+      : (event: Event) => void;
+
+export type RuntimeEventHandlerProps<TEvents extends RuntimeEventMap> = {
+  [K in keyof TEvents]?: RuntimeEventHandler<NonNullable<TEvents[K]>>;
+};
+
+export type RuntimeBooleanAttributeProps<
+  TBooleanAttributes extends readonly string[],
+> = {
+  [K in TBooleanAttributes[number]]?: boolean;
+};
+
+export type RuntimeInferredProps<
+  TElement extends HTMLElement,
+  TEvents extends RuntimeEventMap = RuntimeEmptyEventMap,
+  TBooleanAttributes extends readonly string[] = readonly [],
+> = RuntimeClassProps<TElement> &
+  RuntimeEventHandlerProps<TEvents> &
+  RuntimeBooleanAttributeProps<TBooleanAttributes>;
+
+export type RuntimeWrapperProps<
+  TElement extends HTMLElement,
+  TProps extends object = Record<string, never>,
+> = React.AllHTMLAttributes<TElement> & TProps;
+
+export type RuntimeWrapperReturn<
+  TElement extends HTMLElement,
+  TProps extends object = Record<string, never>,
+> = React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<RuntimeWrapperProps<TElement, TProps>> &
+    React.RefAttributes<TElement>
+>;
+
+export interface RuntimeWrapperSetupReturn<
+  TManifest extends RuntimeManifest,
+> {
+  <
+    TClass extends RuntimeElementConstructor,
+    TEvents extends RuntimeEventMap = RuntimeEmptyEventMap,
+    TBooleanAttributes extends readonly string[] = readonly [],
+  >(
+    tagName: string,
+    elementClass: TClass,
+    options?: RuntimeWrapperOptions<
+      TEvents,
+      TBooleanAttributes,
+      RuntimeManifestClassNames<TManifest>
+    >,
+  ): RuntimeWrapperReturn<
+    InstanceType<TClass>,
+    RuntimeInferredProps<InstanceType<TClass>, TEvents, TBooleanAttributes>
+  >;
+  <
+    TElement extends HTMLElement = HTMLElement,
+    TProps extends object = Record<string, never>,
+    TEvents extends RuntimeEventMap = RuntimeEmptyEventMap,
+    TBooleanAttributes extends readonly string[] = readonly [],
+  >(
+    tagName: string,
+    options?: RuntimeWrapperOptions<
+      TEvents,
+      TBooleanAttributes,
+      RuntimeManifestClassNames<TManifest>
+    >,
+  ): RuntimeWrapperReturn<
+    TElement,
+    TProps &
+      RuntimeInferredProps<TElement, TEvents, TBooleanAttributes>
+  >;
 }
