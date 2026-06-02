@@ -1,46 +1,48 @@
 import { useMemo, useRef, useState } from "react";
-import { wrapComponent } from "../../../src/runtime-wrapper.ts";
-import { RUNTIME_DEMO_TAG, RuntimeDemoElement } from "./runtime-demo-element";
-import {
-  WA_BUTTON_TAG,
-  WA_EXTENDED_TAG,
-  WebAwesomeButton,
-  ExtendedWebAwesomeButton,
-} from "./webawesome-elements";
+import { RuntimeDemoWrapper, RuntimeDemoElement } from "./runtime-demo-element";
+import { WaButton, WaInput } from "./webawesome";
+import { WebAwesomeInput } from "./wa-input";
 import "./App.css";
+import { ExtendedWebAwesomeButton, WebAwesomeButton } from "./wa-extended-button";
 
-const RuntimeDemoWrapper = wrapComponent(RUNTIME_DEMO_TAG, RuntimeDemoElement, {
-  events: {
-    onDemoChange: "demo-change",
-  },
-  properties: ["value"],
-  attributes: ["label"],
-  booleanAttributes: ["active"] as const,
-});
+type WaAppearance = WaButton["appearance"];
+const WA_APPEARANCES: readonly WaAppearance[] = [
+  "plain",
+  "accent",
+  "filled",
+  "outlined",
+  "filled-outlined",
+];
 
-const WAButton = wrapComponent(WA_BUTTON_TAG, WebAwesomeButton, {
-  events: { onWaClick: "wa-click" },
-  properties: ["value"],
-  attributes: ["label"],
-  booleanAttributes: ["active"] as const,
-});
-
-const WAExtended = wrapComponent(WA_EXTENDED_TAG, ExtendedWebAwesomeButton, {
-  events: { onWaExtended: "wa-extended" },
-  properties: ["value", "extra"],
-  attributes: ["label", "variant"],
-});
+type WaInputAppearance = WaInput["appearance"];
+const WA_INPUT_APPEARANCES: readonly WaInputAppearance[] = [
+  "filled",
+  "outlined",
+  "filled-outlined",
+];
 
 function App() {
   const wrapperRef = useRef<RuntimeDemoElement | null>(null);
-  const waRef = useRef<WebAwesomeButton | null>(null);
-  const waeRef = useRef<ExtendedWebAwesomeButton | null>(null);
 
   const [label, setLabel] = useState("Runtime Wrapper");
   const [value, setValue] = useState("idle");
   const [active, setActive] = useState(false);
   const [lastEvent, setLastEvent] = useState("none");
-  const [extra, setExtra] = useState("blue");
+
+  const [waText, setWaText] = useState("WebAwesome Button");
+  const [waAppearance, setWaAppearance] = useState<WaAppearance>("plain");
+  const [waPill, setWaPill] = useState(true);
+
+  const [extendedCount, setExtendedCount] = useState(0);
+
+  const [waInputLabel, setWaInputLabel] = useState("WA Input");
+  const [waInputPlaceholder, setWaInputPlaceholder] = useState("Type here...");
+  const [waInputValue, setWaInputValue] = useState("hello");
+  const [waInputAppearance, setWaInputAppearance] =
+    useState<WaInputAppearance>("outlined");
+  const [waInputPill, setWaInputPill] = useState(false);
+  const [waInputWithClear, setWaInputWithClear] = useState(true);
+  const [waInputDisabled, setWaInputDisabled] = useState(false);
 
   const refState = useMemo(
     () => ({
@@ -57,22 +59,135 @@ function App() {
       <div className="controls">
         <label>
           Label
-          <input value={label} onChange={(event) => setLabel(event.target.value)} />
+          <input
+            value={label}
+            onChange={(event) => setLabel(event.target.value)}
+          />
         </label>
 
         <label>
           Value (property)
-          <input value={value} onChange={(event) => setValue(event.target.value)} />
+          <input
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+          />
         </label>
 
         <label className="checkbox">
-          <input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} />
+          <input
+            type="checkbox"
+            checked={active}
+            onChange={(event) => setActive(event.target.checked)}
+          />
           Active (boolean attribute)
         </label>
 
         <label>
-          Extended extra
-          <input value={extra} onChange={(e) => setExtra(e.target.value)} />
+          WA text
+          <input
+            value={waText}
+            onChange={(event) => setWaText(event.target.value)}
+          />
+        </label>
+
+        <label>
+          WA appearance
+          <select
+            value={waAppearance}
+            onChange={(event) =>
+              setWaAppearance(event.target.value as WaAppearance)
+            }
+          >
+            {WA_APPEARANCES.map((appearance) => (
+              <option key={appearance} value={appearance}>
+                {appearance}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            checked={waPill}
+            onChange={(event) => setWaPill(event.target.checked)}
+          />
+          WA pill
+        </label>
+
+        <button
+          type="button"
+          onClick={() => setExtendedCount(0)}
+          style={{ alignSelf: "end" }}
+        >
+          Reset extended count
+        </button>
+
+        <label>
+          WA input label
+          <input
+            value={waInputLabel}
+            onChange={(event) => setWaInputLabel(event.target.value)}
+          />
+        </label>
+
+        <label>
+          WA input placeholder
+          <input
+            value={waInputPlaceholder}
+            onChange={(event) => setWaInputPlaceholder(event.target.value)}
+          />
+        </label>
+
+        <label>
+          WA input value
+          <input
+            value={waInputValue}
+            onChange={(event) => setWaInputValue(event.target.value)}
+          />
+        </label>
+
+        <label>
+          WA input appearance
+          <select
+            value={waInputAppearance}
+            onChange={(event) =>
+              setWaInputAppearance(event.target.value as WaInputAppearance)
+            }
+          >
+            {WA_INPUT_APPEARANCES.map((appearance) => (
+              <option key={appearance} value={appearance}>
+                {appearance}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            checked={waInputPill}
+            onChange={(event) => setWaInputPill(event.target.checked)}
+          />
+          WA input pill
+        </label>
+
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            checked={waInputWithClear}
+            onChange={(event) => setWaInputWithClear(event.target.checked)}
+          />
+          WA input withClear
+        </label>
+
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            checked={waInputDisabled}
+            onChange={(event) => setWaInputDisabled(event.target.checked)}
+          />
+          WA input disabled
         </label>
       </div>
 
@@ -90,27 +205,51 @@ function App() {
           }}
         />
 
-        <h2>WebAwesome component (wrapped)</h2>
-        <WAButton
-          ref={waRef}
-          label={"WA: " + label}
-          value={value}
-          active={active}
-          onWaClick={(e) => {
-            const d = (e as CustomEvent<{ value: string }>).detail;
-            setLastEvent(`wa-click:${d.value}`);
-          }}
-        />
+        <h2>WebAwesome wa-button (wrapped)</h2>
+        <WebAwesomeButton
+          appearance={waAppearance}
+          pill={waPill}
+          onClick={() => setLastEvent("wa-button:click")}
+        >
+          {waText}
+        </WebAwesomeButton>
 
-        <h2>Extended WebAwesome component (wrapped)</h2>
-        <WAExtended
-          ref={waeRef}
-          label={"Ext: " + label}
-          value={value}
-          extra={extra}
-          onWaExtended={(e) => {
-            const d = (e as CustomEvent<{ extra: string }>).detail;
-            setLastEvent(`wa-extended:${d.extra}`);
+        <h2>Extended WebAwesome button (wrapped)</h2>
+        <ExtendedWebAwesomeButton
+          appearance={waAppearance}
+          pill={waPill}
+          count={extendedCount}
+          onWaeCount={(event) => {
+            setExtendedCount(event.detail.count);
+            setLastEvent(`wae-count:${event.detail.count}`);
+          }}
+        >
+          Click count: {extendedCount}
+        </ExtendedWebAwesomeButton>
+
+        <h2>WebAwesome wa-input (wrapped)</h2>
+        <WebAwesomeInput
+          label={waInputLabel}
+          hint="Emits input/change events and supports withClear."
+          placeholder={waInputPlaceholder}
+          appearance={waInputAppearance}
+          pill={waInputPill}
+          withClear={waInputWithClear}
+          disabled={waInputDisabled}
+          value={waInputValue}
+          onInput={(event) => {
+            const el = event.target as WaInput;
+            const nextValue = el.value ?? "";
+            setWaInputValue(nextValue);
+            setLastEvent(`wa-input:input:${nextValue}`);
+          }}
+          onChange={(event) => {
+            const el = event.target as WaInput;
+            setLastEvent(`wa-input:change:${el.value ?? ""}`);
+          }}
+          onWaClear={() => {
+            setWaInputValue("");
+            setLastEvent("wa-input:wa-clear");
           }}
         />
       </section>

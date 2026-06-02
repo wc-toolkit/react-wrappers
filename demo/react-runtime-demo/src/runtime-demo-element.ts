@@ -1,3 +1,5 @@
+import { wrapComponent } from "../../../src/runtime-wrapper";
+
 export const RUNTIME_DEMO_TAG = "runtime-demo-element" as const;
 
 export class RuntimeDemoElement extends HTMLElement {
@@ -59,9 +61,11 @@ export class RuntimeDemoElement extends HTMLElement {
   }
 }
 
-if (
-  typeof customElements !== "undefined" &&
-  !customElements.get(RUNTIME_DEMO_TAG)
-) {
-  customElements.define(RUNTIME_DEMO_TAG, RuntimeDemoElement);
-}
+export const RuntimeDemoWrapper = wrapComponent(RUNTIME_DEMO_TAG, RuntimeDemoElement, {
+  events: {
+    onDemoChange: "demo-change",
+  },
+  properties: ["value"],
+  attributes: ["label"],
+  booleanAttributes: ["active"] as const,
+});

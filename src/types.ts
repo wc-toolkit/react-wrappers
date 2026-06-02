@@ -131,9 +131,11 @@ type RuntimeManifestDeclarations<TManifest> =
       : never
     : never;
 
+// Many Custom Elements Manifest JSON files don't preserve `customElement: true` as a
+// literal type, so we key off the presence of `name` + `tagName` instead.
 type RuntimeManifestCustomElementDeclarations<TManifest> = Extract<
   RuntimeManifestDeclarations<TManifest>,
-  { name: string; tagName: string; customElement: true }
+  { name: string; tagName: string }
 >;
 
 export type RuntimeManifestClassNames<TManifest> = Extract<
@@ -141,6 +143,73 @@ export type RuntimeManifestClassNames<TManifest> = Extract<
     ? TName
     : never,
   string
+>;
+
+type RuntimeManifestDeclarationByTagName<
+  TManifest,
+  TTagName extends string,
+> = Extract<RuntimeManifestCustomElementDeclarations<TManifest>, { tagName: TTagName }>;
+
+type RuntimeManifestEventNamesForTagName<
+  TManifest,
+  TTagName extends string,
+> = RuntimeManifestDeclarationByTagName<TManifest, TTagName> extends infer TDeclaration
+  ? TDeclaration extends { events?: readonly (infer TEvent)[] }
+    ? TEvent extends { name: infer TName }
+      ? Extract<TName, string>
+      : never
+    : never
+  : never;
+
+type RuntimeManifestCustomEventNamesForTagName<
+  TManifest,
+  TTagName extends string,
+> = Extract<RuntimeManifestEventNamesForTagName<TManifest, TTagName>, `${string}-${string}`>;
+
+type RuntimeManifestToPascalCase<T extends string> =
+  T extends `${infer Head}-${infer Tail}`
+    ? `${Capitalize<Head>}${RuntimeManifestToPascalCase<Tail>}`
+    : Capitalize<T>;
+
+type RuntimeManifestEventMapForTagName<
+  TManifest,
+  TTagName extends string,
+> = Partial<
+  Record<
+    `on${RuntimeManifestToPascalCase<RuntimeManifestCustomEventNamesForTagName<TManifest, TTagName>>}`,
+    RuntimeEventDescriptor
+  >
+>;
+
+type RuntimeManifestDeclarationByClassName<
+  TManifest,
+  TClassName extends string,
+> = Extract<RuntimeManifestCustomElementDeclarations<TManifest>, { name: TClassName }>;
+
+type RuntimeManifestEventNamesForClassName<
+  TManifest,
+  TClassName extends string,
+> = RuntimeManifestDeclarationByClassName<TManifest, TClassName> extends infer TDeclaration
+  ? TDeclaration extends { events?: readonly (infer TEvent)[] }
+    ? TEvent extends { name: infer TName }
+      ? Extract<TName, string>
+      : never
+    : never
+  : never;
+
+type RuntimeManifestCustomEventNamesForClassName<
+  TManifest,
+  TClassName extends string,
+> = Extract<RuntimeManifestEventNamesForClassName<TManifest, TClassName>, `${string}-${string}`>;
+
+type RuntimeManifestEventMapForClassName<
+  TManifest,
+  TClassName extends string,
+> = Partial<
+  Record<
+    `on${RuntimeManifestToPascalCase<RuntimeManifestCustomEventNamesForClassName<TManifest, TClassName>>}`,
+    RuntimeEventDescriptor
+  >
 >;
 
 export interface RuntimeWrapperOptions<
@@ -219,11 +288,33 @@ export interface RuntimeWrapperSetupReturn<
   TManifest extends RuntimeManifest,
 > {
   <
+    TTagName extends string,
+    TClass extends RuntimeElementConstructor,
+    TExtends extends RuntimeManifestClassNames<TManifest>,
+    TEvents extends RuntimeEventMap = RuntimeEmptyEventMap,
+    TBooleanAttributes extends readonly string[] = readonly [],
+  >(
+    tagName: TTagName,
+    elementClass: TClass,
+    options: RuntimeWrapperOptions<TEvents, TBooleanAttributes, TExtends> & {
+      extends: TExtends;
+    },
+  ): RuntimeWrapperReturn<
+    InstanceType<TClass>,
+    RuntimeInferredProps<
+      InstanceType<TClass>,
+      TEvents & RuntimeManifestEventMapForClassName<TManifest, TExtends>,
+      TBooleanAttributes
+    >
+  >;
+
+  <
+    TTagName extends string,
     TClass extends RuntimeElementConstructor,
     TEvents extends RuntimeEventMap = RuntimeEmptyEventMap,
     TBooleanAttributes extends readonly string[] = readonly [],
   >(
-    tagName: string,
+    tagName: TTagName,
     elementClass: TClass,
     options?: RuntimeWrapperOptions<
       TEvents,
@@ -232,15 +323,21 @@ export interface RuntimeWrapperSetupReturn<
     >,
   ): RuntimeWrapperReturn<
     InstanceType<TClass>,
-    RuntimeInferredProps<InstanceType<TClass>, TEvents, TBooleanAttributes>
+    RuntimeInferredProps<
+      InstanceType<TClass>,
+      TEvents & RuntimeManifestEventMapForTagName<TManifest, TTagName>,
+      TBooleanAttributes
+    >
   >;
+
   <
+    TTagName extends string,
     TElement extends HTMLElement = HTMLElement,
     TProps extends object = Record<string, never>,
     TEvents extends RuntimeEventMap = RuntimeEmptyEventMap,
     TBooleanAttributes extends readonly string[] = readonly [],
   >(
-    tagName: string,
+    tagName: TTagName,
     options?: RuntimeWrapperOptions<
       TEvents,
       TBooleanAttributes,
@@ -249,6 +346,10 @@ export interface RuntimeWrapperSetupReturn<
   ): RuntimeWrapperReturn<
     TElement,
     TProps &
-      RuntimeInferredProps<TElement, TEvents, TBooleanAttributes>
+      RuntimeInferredProps<
+        TElement,
+        TEvents & RuntimeManifestEventMapForTagName<TManifest, TTagName>,
+        TBooleanAttributes
+      >
   >;
 }
