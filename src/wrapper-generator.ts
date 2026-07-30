@@ -469,7 +469,7 @@ function getTypeDefinitionTemplate(
     events,
     properties,
   );
-  const eventTypes = getCustomEventDetailTypes(component);
+  const eventTypes = getEventDetailImportTypes(component);
   const formattedComponentName = getFormattedComponentName(component);
   return `
     import React from "react";
@@ -553,6 +553,24 @@ function getEventTypes(
           : eventType.type,
       };
     });
+}
+
+// `getCustomEventDetailTypes` only collects detail types written bare; it skips
+// anything containing `<`/`>`, so a `CustomEvent<MyDetail>` event leaves
+// `MyDetail` referenced by the generated aliases but never imported. Recover the
+// inner type from those wrapped events too. Only a single identifier is taken —
+// unions, nested generics, arrays and namespaced shapes have no single importable
+// name — and, as elsewhere in the generator, the detail is assumed to be a named
+// export of the element's module.
+function getEventDetailImportTypes(component: Component): string[] {
+  const bare = getCustomEventDetailTypes(component);
+  const wrapped = getEventTypes(component)
+    .map((event) => /^CustomEvent<(.+)>$/.exec(event.type)?.[1]?.trim())
+    .filter(
+      (detail): detail is string =>
+        detail !== undefined && /^[A-Z][\w$]*$/.test(detail),
+    );
+  return [...new Set([...bare, ...wrapped])];
 }
 
 function getStronglyTypedEvents(
@@ -762,5 +780,10 @@ function getEventType(
     return base;
   }
 
-  return base + `${componentName}${toPascalCase(eventName)}ElementEvent`;
+  // A typed detail gets the per-event alias declared by `getStronglyTypedEvents`;
+  // without strong typing there is no alias, so the raw event type is the handler
+  // parameter type.
+  return config.stronglyTypedEvents
+    ? `${componentName}${toPascalCase(eventName)}ElementEvent`
+    : eventType;
 }
