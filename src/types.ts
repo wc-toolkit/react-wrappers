@@ -1,4 +1,5 @@
 import type { Attribute } from "custom-elements-manifest";
+import type React from "react";
 
 export interface ReactWrapperOptions {
   /** Used to get a specific path for a given component. Defaults to the component definition path in the CEM. */
@@ -61,4 +62,294 @@ export interface EventName {
   description?: string;
   type?: string;
   custom?: boolean;
+}
+
+export type RuntimePropMap = readonly string[] | Record<string, string>;
+
+export type RuntimeEventDescriptor<TDetail = unknown> =
+  | string
+  | {
+      name: string;
+      detail?: TDetail;
+    };
+
+/** Runtime event handlers must use React-style prop names (e.g. `onReady`). */
+export type RuntimeEventMap = Partial<
+  Record<`on${Capitalize<string>}`, RuntimeEventDescriptor>
+>;
+
+type RuntimeEmptyEventMap = Record<never, string>;
+
+export interface RuntimeManifestType {
+  text?: string;
+}
+
+export interface RuntimeManifestAttribute {
+  name: string;
+  fieldName?: string;
+  type?: RuntimeManifestType;
+}
+
+export interface RuntimeManifestEvent {
+  name: string;
+}
+
+export interface RuntimeManifestMember {
+  kind?: string;
+  name?: string;
+  privacy?: string;
+  static?: boolean;
+  attribute?: string;
+}
+
+export interface RuntimeManifestComponent {
+  kind?: string;
+  name: string;
+  tagName?: string;
+  customElement?: boolean;
+  attributes?: readonly RuntimeManifestAttribute[];
+  events?: readonly RuntimeManifestEvent[];
+  members?: readonly RuntimeManifestMember[];
+}
+
+export interface RuntimeManifestModule {
+  kind?: string;
+  path?: string;
+  declarations?: readonly RuntimeManifestComponent[];
+}
+
+export interface RuntimeManifest {
+  schemaVersion?: string;
+  readme?: string;
+  modules?: readonly RuntimeManifestModule[];
+}
+
+type RuntimeManifestDeclarations<TManifest> =
+  TManifest extends { modules?: readonly (infer TModule)[] }
+    ? TModule extends { declarations?: readonly (infer TDeclaration)[] }
+      ? TDeclaration
+      : never
+    : never;
+
+// Many Custom Elements Manifest JSON files don't preserve `customElement: true` as a
+// literal type, so we key off the presence of `name` + `tagName` instead.
+type RuntimeManifestCustomElementDeclarations<TManifest> = Extract<
+  RuntimeManifestDeclarations<TManifest>,
+  { name: string; tagName: string }
+>;
+
+export type RuntimeManifestClassNames<TManifest> = Extract<
+  RuntimeManifestCustomElementDeclarations<TManifest> extends { name: infer TName }
+    ? TName
+    : never,
+  string
+>;
+
+type RuntimeManifestDeclarationByTagName<
+  TManifest,
+  TTagName extends string,
+> = Extract<RuntimeManifestCustomElementDeclarations<TManifest>, { tagName: TTagName }>;
+
+type RuntimeManifestEventNamesForTagName<
+  TManifest,
+  TTagName extends string,
+> = RuntimeManifestDeclarationByTagName<TManifest, TTagName> extends infer TDeclaration
+  ? TDeclaration extends { events?: readonly (infer TEvent)[] }
+    ? TEvent extends { name: infer TName }
+      ? Extract<TName, string>
+      : never
+    : never
+  : never;
+
+type RuntimeManifestCustomEventNamesForTagName<
+  TManifest,
+  TTagName extends string,
+> = Extract<RuntimeManifestEventNamesForTagName<TManifest, TTagName>, `${string}-${string}`>;
+
+type RuntimeManifestToPascalCase<T extends string> =
+  T extends `${infer Head}-${infer Tail}`
+    ? `${Capitalize<Head>}${RuntimeManifestToPascalCase<Tail>}`
+    : Capitalize<T>;
+
+type RuntimeManifestEventMapForTagName<
+  TManifest,
+  TTagName extends string,
+> = Partial<
+  Record<
+    `on${RuntimeManifestToPascalCase<RuntimeManifestCustomEventNamesForTagName<TManifest, TTagName>>}`,
+    RuntimeEventDescriptor
+  >
+>;
+
+type RuntimeManifestDeclarationByClassName<
+  TManifest,
+  TClassName extends string,
+> = Extract<RuntimeManifestCustomElementDeclarations<TManifest>, { name: TClassName }>;
+
+type RuntimeManifestEventNamesForClassName<
+  TManifest,
+  TClassName extends string,
+> = RuntimeManifestDeclarationByClassName<TManifest, TClassName> extends infer TDeclaration
+  ? TDeclaration extends { events?: readonly (infer TEvent)[] }
+    ? TEvent extends { name: infer TName }
+      ? Extract<TName, string>
+      : never
+    : never
+  : never;
+
+type RuntimeManifestCustomEventNamesForClassName<
+  TManifest,
+  TClassName extends string,
+> = Extract<RuntimeManifestEventNamesForClassName<TManifest, TClassName>, `${string}-${string}`>;
+
+type RuntimeManifestEventMapForClassName<
+  TManifest,
+  TClassName extends string,
+> = Partial<
+  Record<
+    `on${RuntimeManifestToPascalCase<RuntimeManifestCustomEventNamesForClassName<TManifest, TClassName>>}`,
+    RuntimeEventDescriptor
+  >
+>;
+
+export interface RuntimeWrapperOptions<
+  TEvents extends RuntimeEventMap = RuntimeEventMap,
+  TBooleanAttributes extends readonly string[] = readonly string[],
+  TExtends extends string = string,
+> {
+  /** Optional attribute mapping. Includes `className` -> `class` and `htmlFor` -> `for` by default. */
+  attributes?: RuntimePropMap;
+  /** Optional list or map of React props that should be assigned as element properties instead of rendered attributes. */
+  properties?: RuntimePropMap;
+  /** Optional map of React event prop names to DOM event names. */
+  events?: TEvents;
+  /** Optional React prop names that should render as boolean attributes. */
+  booleanAttributes?: TBooleanAttributes;
+  /** Optional manifest class name to inherit API metadata from. */
+  extends?: TExtends;
+  /** Optional React display name override. */
+  displayName?: string;
+  /** Strict mode (default: true). If false, forwards unknown props as attributes. */
+  strict?: boolean;
+}
+
+export type RuntimeElementConstructor<TElement extends HTMLElement = HTMLElement> =
+  abstract new (...args: never[]) => TElement;
+
+type RuntimeFunction = (...args: never[]) => unknown;
+
+type NonFunctionPropertyNames<T> = {
+  [K in keyof T]-?: T[K] extends RuntimeFunction ? never : K;
+}[keyof T];
+
+export type RuntimeClassProps<TElement extends HTMLElement> = Partial<
+  Pick<TElement, Exclude<NonFunctionPropertyNames<TElement>, keyof HTMLElement>>
+>;
+
+type RuntimeEventHandler<TDescriptor> =
+  TDescriptor extends string
+    ? (event: Event) => void
+    : TDescriptor extends { detail: infer TDetail }
+      ? (event: CustomEvent<TDetail>) => void
+      : (event: Event) => void;
+
+export type RuntimeEventHandlerProps<TEvents extends RuntimeEventMap> = {
+  [K in keyof TEvents]?: RuntimeEventHandler<NonNullable<TEvents[K]>>;
+};
+
+export type RuntimeBooleanAttributeProps<
+  TBooleanAttributes extends readonly string[],
+> = {
+  [K in TBooleanAttributes[number]]?: boolean;
+};
+
+export type RuntimeInferredProps<
+  TElement extends HTMLElement,
+  TEvents extends RuntimeEventMap = RuntimeEmptyEventMap,
+  TBooleanAttributes extends readonly string[] = readonly [],
+> = RuntimeClassProps<TElement> &
+  RuntimeEventHandlerProps<TEvents> &
+  RuntimeBooleanAttributeProps<TBooleanAttributes>;
+
+export type RuntimeWrapperProps<
+  TElement extends HTMLElement,
+  TProps extends object = Record<string, never>,
+> = React.AllHTMLAttributes<TElement> & TProps;
+
+export type RuntimeWrapperReturn<
+  TElement extends HTMLElement,
+  TProps extends object = Record<string, never>,
+> = React.ForwardRefExoticComponent<
+  React.PropsWithoutRef<RuntimeWrapperProps<TElement, TProps>> &
+    React.RefAttributes<TElement>
+>;
+
+export interface RuntimeWrapperSetupReturn<
+  TManifest extends RuntimeManifest,
+> {
+  <
+    TTagName extends string,
+    TClass extends RuntimeElementConstructor,
+    TExtends extends RuntimeManifestClassNames<TManifest>,
+    TEvents extends RuntimeEventMap = RuntimeEmptyEventMap,
+    TBooleanAttributes extends readonly string[] = readonly [],
+  >(
+    tagName: TTagName,
+    elementClass: TClass,
+    options: RuntimeWrapperOptions<TEvents, TBooleanAttributes, TExtends> & {
+      extends: TExtends;
+    },
+  ): RuntimeWrapperReturn<
+    InstanceType<TClass>,
+    RuntimeInferredProps<
+      InstanceType<TClass>,
+      TEvents & RuntimeManifestEventMapForClassName<TManifest, TExtends>,
+      TBooleanAttributes
+    >
+  >;
+
+  <
+    TTagName extends string,
+    TClass extends RuntimeElementConstructor,
+    TEvents extends RuntimeEventMap = RuntimeEmptyEventMap,
+    TBooleanAttributes extends readonly string[] = readonly [],
+  >(
+    tagName: TTagName,
+    elementClass: TClass,
+    options?: RuntimeWrapperOptions<
+      TEvents,
+      TBooleanAttributes,
+      RuntimeManifestClassNames<TManifest>
+    >,
+  ): RuntimeWrapperReturn<
+    InstanceType<TClass>,
+    RuntimeInferredProps<
+      InstanceType<TClass>,
+      TEvents & RuntimeManifestEventMapForTagName<TManifest, TTagName>,
+      TBooleanAttributes
+    >
+  >;
+
+  <
+    TTagName extends string,
+    TElement extends HTMLElement = HTMLElement,
+    TProps extends object = Record<string, never>,
+    TEvents extends RuntimeEventMap = RuntimeEmptyEventMap,
+    TBooleanAttributes extends readonly string[] = readonly [],
+  >(
+    tagName: TTagName,
+    options?: RuntimeWrapperOptions<
+      TEvents,
+      TBooleanAttributes,
+      RuntimeManifestClassNames<TManifest>
+    >,
+  ): RuntimeWrapperReturn<
+    TElement,
+    TProps &
+      RuntimeInferredProps<
+        TElement,
+        TEvents & RuntimeManifestEventMapForTagName<TManifest, TTagName>,
+        TBooleanAttributes
+      >
+  >;
 }

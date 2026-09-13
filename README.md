@@ -79,6 +79,19 @@ npx cem analyze
 
 This will analyze your web components and generate React wrappers in the `./react` directory.
 
+### cem-generator Plugin
+
+Use `reactWrapperGeneratorPlugin` with `@wc-toolkit/cem-generator`:
+
+```ts
+import { generateCem } from "@wc-toolkit/cem-generator";
+import { reactWrapperGeneratorPlugin } from "@wc-toolkit/react-wrappers";
+
+generateCem({
+  plugins: [reactWrapperGeneratorPlugin({ outdir: "./react" })],
+});
+```
+
 ### Programmatic Usage
 
 You can also call the generator directly with a manifest object:
@@ -96,6 +109,46 @@ generateReactWrappers(manifest, {
 ```
 
 This approach is useful for build scripts, custom tooling, or integrating with other build systems.
+
+### Runtime Wrapper Usage
+
+If you need to wrap tags that are only known at app runtime, such as locally extended elements or plugin-provided components, you can create wrappers directly:
+
+```ts
+import { wrapComponent } from "@wc-toolkit/react-wrappers";
+import { MyButtonClass } from "./my-element.js";
+
+export const MyButton = wrapComponent("my-element", MyButtonClass, {
+  events: {
+    onReady: "ready",
+  },
+  properties: ["value"],
+  booleanAttributes: ["disabled"] as const,
+});
+```
+
+Passing the element class lets `wrapComponent()` infer the element and ref types from the class itself. The wrapper also uses the class prototype as a runtime hint for property assignment, similar to Lit's React wrappers, while events still come from the explicit `events` map.
+
+### Manifest-Backed Runtime Wrappers
+
+If you already have a Custom Elements Manifest, you can preconfigure runtime wrappers once and let the manifest supply default attributes, properties, boolean attributes, and event mappings:
+
+```ts
+import manifest from "./custom-elements.json" with { type: "json" };
+import { wrapperSetup } from "@wc-toolkit/react-wrappers";
+import { MyExtendedButton } from "./my-extended-button.js";
+
+const wrapComponent = wrapperSetup(manifest);
+
+export const MyButton = wrapComponent("my-extended-button", MyExtendedButton, {
+  extends: "BaseButton",
+  events: {
+    onExtraReady: "extra-ready",
+  },
+});
+```
+
+`wrapperSetup()` indexes the manifest by tag name and class name. `wrapComponent()` uses the rendered `tagName` by default, or `options.extends` to inherit API metadata from a base manifest class when you are wrapping a locally extended component. Explicit options always override the manifest-derived defaults.
 
 ## Using Generated Wrappers
 
@@ -261,6 +314,7 @@ function App() {
   );
 }
 ```
+
 ### Custom Formatting
 
 #### Component Name Formatting
@@ -479,6 +533,7 @@ reactWrapperPlugin({
 ---
 
 **Links:**
+
 - [GitHub Repository](https://github.com/wc-toolkit/react-wrappers)
 - [Documentation](https://wc-toolkit.com/documentation/react-wrappers)
 - [Issues](https://github.com/wc-toolkit/react-wrappers/issues)
