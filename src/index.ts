@@ -1,4 +1,5 @@
 export { reactWrapperPlugin } from "./cem-analyzer-plugin";
+export { reactWrapperGeneratorPlugin } from "./cem-analyzer-plugin";
 export { wrapComponent, wrapperSetup } from "./runtime-wrapper";
 export { generateReactWrappers } from "./wrapper-generator";
 export type {

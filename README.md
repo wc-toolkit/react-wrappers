@@ -79,6 +79,19 @@ npx cem analyze
 
 This will analyze your web components and generate React wrappers in the `./react` directory.
 
+### cem-generator Plugin
+
+Use `reactWrapperGeneratorPlugin` with `@wc-toolkit/cem-generator`:
+
+```ts
+import { generateCem } from "@wc-toolkit/cem-generator";
+import { reactWrapperGeneratorPlugin } from "@wc-toolkit/react-wrappers";
+
+generateCem({
+  plugins: [reactWrapperGeneratorPlugin({ outdir: "./react" })],
+});
+```
+
 ### Programmatic Usage
 
 You can also call the generator directly with a manifest object:
