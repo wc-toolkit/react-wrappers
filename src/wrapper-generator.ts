@@ -310,10 +310,12 @@ function addAttribute(
 }
 
 function getMappedAttribute(attr: Attribute): MappedAttribute {
+  const mappedName = config.attributeMapping![attr.name];
   return {
     ...attr,
     originalName: attr.name,
-    name: config.attributeMapping![attr.name],
+    name: mappedName,
+    fieldName: mappedName,
   };
 }
 
