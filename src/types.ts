@@ -2,8 +2,8 @@ import type { Attribute } from "custom-elements-manifest";
 import type React from "react";
 
 export interface ReactWrapperOptions {
-  /** Used to get a specific path for a given component. Defaults to the component definition path in the CEM. */
-  modulePath?: (className: string, tagName: string) => string;
+  /** Used to get a specific path for a given component. Defaults to the resolved module path in the CEM. */
+  modulePath?: (className: string, tagName: string, cemModulePath?: string) => string;
   /** Path to output directory */
   outdir?: string;
   /** Indicates if the component classes are a default export rather than a named export */

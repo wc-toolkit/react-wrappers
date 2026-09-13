@@ -77,6 +77,20 @@ describe("generateReactWrappers", () => {
     ).toBe("../dist/components/my-button.js");
   });
 
+  it("passes the CEM module path to a custom module path resolver", () => {
+    const outdir = createTempDir();
+    const componentPath = path.join(outdir, "..", "dist", "components", "my-button.js");
+
+    expect(
+      getModulePath(
+        (_className, _tagName, cemModulePath) => cemModulePath!,
+        { name: "MyButton", tagName: "my-button", modulePath: componentPath },
+        outdir,
+        {},
+      ),
+    ).toBe(componentPath);
+  });
+
   it("maps className to the host class attribute", () => {
     const outdir = createTempDir();
 

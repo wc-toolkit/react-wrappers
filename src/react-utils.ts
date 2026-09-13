@@ -18,7 +18,7 @@ export function getModulePath(
   packageJson: any,
 ) {
   if (modulePath instanceof Function) {
-    return modulePath(component.name, component.tagName!);
+    return modulePath(component.name, component.tagName!, component.modulePath);
   }
 
   if (component.modulePath && looksLikeFilePath(component.modulePath)) {

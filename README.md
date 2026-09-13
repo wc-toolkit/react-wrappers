@@ -230,7 +230,7 @@ All options work with both `reactWrapperPlugin()` and `generateReactWrappers()`.
 | Option          | Type                             | Default       | Description                                         |
 | --------------- | -------------------------------- | ------------- | --------------------------------------------------- |
 | `outdir`        | `string`                         | `"./react"`   | Output directory for generated files                |
-| `modulePath`    | `(className, tagName) => string` | Auto-detected | Function to compute import path for custom elements |
+| `modulePath`    | `(className, tagName, cemModulePath) => string` | CEM module path | Optional function to transform or replace the resolved CEM import path |
 | `defaultExport` | `boolean`                        | `false`       | Use default exports instead of named exports        |
 | `debug`         | `boolean`                        | `false`       | Enable detailed logging                             |
 | `skip`          | `boolean`                        | `false`       | Skip generation (useful for conditional execution)  |
