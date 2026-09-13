@@ -12,7 +12,9 @@ export function getPackageJson() {
 }
 
 export function getModulePath(
-  modulePath: ((className: string, tagName: string) => string) | undefined,
+  modulePath:
+    | ((className: string, tagName: string, cemModulePath?: string) => string)
+    | undefined,
   component: Component,
   outdir: string,
   packageJson: any,

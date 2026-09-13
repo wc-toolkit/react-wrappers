@@ -70,7 +70,12 @@ describe("generateReactWrappers", () => {
     expect(
       getModulePath(
         undefined,
-        { name: "MyButton", tagName: "my-button", modulePath: componentPath },
+        {
+          name: "MyButton",
+          tagName: "my-button",
+          modulePath: componentPath,
+          customElement: true,
+        },
         outdir,
         {},
       ),
@@ -84,7 +89,12 @@ describe("generateReactWrappers", () => {
     expect(
       getModulePath(
         (_className, _tagName, cemModulePath) => cemModulePath!,
-        { name: "MyButton", tagName: "my-button", modulePath: componentPath },
+        {
+          name: "MyButton",
+          tagName: "my-button",
+          modulePath: componentPath,
+          customElement: true,
+        },
         outdir,
         {},
       ),
@@ -143,6 +153,37 @@ describe("generateReactWrappers", () => {
       /const \{[\s\S]*className,[\s\S]*\.\.\.restProps[\s\S]*\} = props;/,
     );
     expect(wrapper).toContain("class: className");
+  });
+
+  it("maps reserved attributes to valid generated property identifiers", () => {
+    const outdir = createTempDir();
+
+    generateReactWrappers(
+      {
+        schemaVersion: "1.0.0",
+        modules: [
+          {
+            kind: "javascript-module",
+            path: "dist/otp-input.js",
+            declarations: [
+              {
+                kind: "class",
+                name: "OtpInput",
+                tagName: "wa-otp-input",
+                customElement: true,
+                attributes: [{ name: "case", fieldName: "case" }],
+                members: [{ kind: "field", name: "case", type: { text: "string" } }],
+              },
+            ],
+          },
+        ],
+      },
+      { outdir, attributeMapping: { case: "caseValue" } },
+    );
+
+    const wrapper = fs.readFileSync(path.join(outdir, "OtpInput.js"), "utf8");
+    expect(wrapper).toContain("case: caseValue");
+    expect(wrapper).not.toContain("case: case ??");
   });
 
   it("types and imports a CustomEvent detail for strongly typed events", () => {
