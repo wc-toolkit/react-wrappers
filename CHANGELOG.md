@@ -1,5 +1,11 @@
 # @wc-toolkit/react-wrappers
 
+## 1.2.9
+
+### Patch Changes
+
+- f3e8d75: Use the resolved CEM module path by default when generating React wrapper imports.
+
 ## 1.2.8
 
 ### Patch Changes
