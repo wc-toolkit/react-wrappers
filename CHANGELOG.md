@@ -1,5 +1,11 @@
 # @wc-toolkit/react-wrappers
 
+## 1.2.10
+
+### Patch Changes
+
+- bf12904: Apply configured attribute mappings to generated property identifiers so reserved attributes produce valid React wrapper code.
+
 ## 1.2.9
 
 ### Patch Changes
