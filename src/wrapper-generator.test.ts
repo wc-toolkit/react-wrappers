@@ -3,6 +3,7 @@ import os from "os";
 import path from "path";
 import { afterEach, describe, expect, it } from "vitest";
 import { generateReactWrappers } from "./wrapper-generator";
+import { getModulePath } from "./react-utils";
 
 const tempDirs: string[] = [];
 
@@ -62,6 +63,20 @@ function generateButtonTypes(
 }
 
 describe("generateReactWrappers", () => {
+  it("uses the CEM module path when package.json has no module field", () => {
+    const outdir = createTempDir();
+    const componentPath = path.join(outdir, "..", "dist", "components", "my-button.js");
+
+    expect(
+      getModulePath(
+        undefined,
+        { name: "MyButton", tagName: "my-button", modulePath: componentPath },
+        outdir,
+        {},
+      ),
+    ).toBe("../dist/components/my-button.js");
+  });
+
   it("maps className to the host class attribute", () => {
     const outdir = createTempDir();
 

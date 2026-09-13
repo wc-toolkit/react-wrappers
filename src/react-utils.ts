@@ -21,6 +21,13 @@ export function getModulePath(
     return modulePath(component.name, component.tagName!);
   }
 
+  if (component.modulePath && looksLikeFilePath(component.modulePath)) {
+    const relativePath = path
+      .relative(path.resolve(outdir), path.resolve(component.modulePath))
+      .replaceAll(path.sep, "/");
+    return relativePath.startsWith(".") ? relativePath : `./${relativePath}`;
+  }
+
   if (!packageJson.module) {
     throw new Error(
       "You must define a module path in order to generate React wrappers.",
@@ -29,6 +36,10 @@ export function getModulePath(
 
   const directories = outdir?.split("/");
   return path.join(directories.map(() => "../").join(""), packageJson.module);
+}
+
+function looksLikeFilePath(value: string): boolean {
+  return path.isAbsolute(value) || value.startsWith(".") || value.includes("/") || /\.[cm]?[jt]sx?$/.test(value);
 }
 
 export const createEventName = (event: any) => `on${toPascalCase(event.name)}`;
