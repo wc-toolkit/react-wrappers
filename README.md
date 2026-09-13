@@ -118,17 +118,13 @@ If you need to wrap tags that are only known at app runtime, such as locally ext
 import { wrapComponent } from "@wc-toolkit/react-wrappers";
 import { MyButtonClass } from "./my-element.js";
 
-export const MyButton = wrapComponent(
-  "my-element",
-  MyButtonClass,
-  {
-    events: {
-      onReady: "ready",
-    },
-    properties: ["value"],
-    booleanAttributes: ["disabled"] as const,
+export const MyButton = wrapComponent("my-element", MyButtonClass, {
+  events: {
+    onReady: "ready",
   },
-);
+  properties: ["value"],
+  booleanAttributes: ["disabled"] as const,
+});
 ```
 
 Passing the element class lets `wrapComponent()` infer the element and ref types from the class itself. The wrapper also uses the class prototype as a runtime hint for property assignment, similar to Lit's React wrappers, while events still come from the explicit `events` map.
@@ -144,16 +140,12 @@ import { MyExtendedButton } from "./my-extended-button.js";
 
 const wrapComponent = wrapperSetup(manifest);
 
-export const MyButton = wrapComponent(
-  "my-extended-button",
-  MyExtendedButton,
-  {
-    extends: "BaseButton",
-    events: {
-      onExtraReady: "extra-ready",
-    },
+export const MyButton = wrapComponent("my-extended-button", MyExtendedButton, {
+  extends: "BaseButton",
+  events: {
+    onExtraReady: "extra-ready",
   },
-);
+});
 ```
 
 `wrapperSetup()` indexes the manifest by tag name and class name. `wrapComponent()` uses the rendered `tagName` by default, or `options.extends` to inherit API metadata from a base manifest class when you are wrapping a locally extended component. Explicit options always override the manifest-derived defaults.
@@ -322,6 +314,7 @@ function App() {
   );
 }
 ```
+
 ### Custom Formatting
 
 #### Component Name Formatting
@@ -540,6 +533,7 @@ reactWrapperPlugin({
 ---
 
 **Links:**
+
 - [GitHub Repository](https://github.com/wc-toolkit/react-wrappers)
 - [Documentation](https://wc-toolkit.com/documentation/react-wrappers)
 - [Issues](https://github.com/wc-toolkit/react-wrappers/issues)

@@ -13,7 +13,9 @@ export function reactWrapperPlugin(options: ReactWrapperOptions = {}) {
 }
 
 /** Plugin for @wc-toolkit/cem-generator that generates React wrappers from the finalized CEM. */
-export function reactWrapperGeneratorPlugin(options: ReactWrapperOptions = {}): Plugin {
+export function reactWrapperGeneratorPlugin(
+  options: ReactWrapperOptions = {},
+): Plugin {
   return {
     name: "@wc-toolkit/react-wrappers:cem-generator",
     afterGenerate(manifest: Package) {
