@@ -1,5 +1,11 @@
 # @wc-toolkit/react-wrappers
 
+## 1.2.8
+
+### Patch Changes
+
+- a2dec2c: Add a `cem-generator` plugin for generating React wrappers from the finalized CEM.
+
 ## 1.2.7
 
 ### Patch Changes
