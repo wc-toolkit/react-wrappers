@@ -1,4 +1,4 @@
-import { generateReactWrappers } from "../dist/index.js";
+import { generateReactWrappers } from "../../dist/index.js";
 import manifest from "./shoelace-cem.json" with { type: "json" };
 
 generateReactWrappers(manifest, {

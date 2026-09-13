@@ -140,5 +140,5 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
-demo/wrappers/**/*
+demo/generator/wrappers/**/*
 .DS_Store
