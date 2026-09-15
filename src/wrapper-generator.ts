@@ -66,7 +66,11 @@ export function generateReactWrappers(
 
   components.forEach((component) => {
     const events = getEventNames(component);
-    const { booleanAttributes, attributes } = getAttributes(component);
+    const componentForGeneration = {
+      ...component,
+      attributes: component.attributes?.map((attribute) => ({ ...attribute })),
+    };
+    const { booleanAttributes, attributes } = getAttributes(componentForGeneration);
     const properties = getProperties(component, attributes, booleanAttributes);
     const componentModulePath = getModulePath(
       config.modulePath,
