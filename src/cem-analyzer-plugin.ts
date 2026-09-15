@@ -7,7 +7,7 @@ export function reactWrapperPlugin(options: ReactWrapperOptions = {}) {
   return {
     name: "react-wrappers",
     packageLinkPhase({ customElementsManifest }: unknown) {
-      generateReactWrappers(customElementsManifest, options);
+      generateReactWrappers(cloneManifest(customElementsManifest), options);
     },
   };
 }
@@ -19,7 +19,11 @@ export function reactWrapperGeneratorPlugin(
   return {
     name: "@wc-toolkit/react-wrappers:cem-generator",
     afterGenerate(manifest: Package) {
-      generateReactWrappers(manifest, options);
+      generateReactWrappers(cloneManifest(manifest), options);
     },
   };
+}
+
+function cloneManifest(manifest: unknown): Package {
+  return structuredClone(manifest) as Package;
 }

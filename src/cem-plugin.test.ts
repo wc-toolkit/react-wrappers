@@ -41,6 +41,8 @@ describe("reactWrapperGeneratorPlugin", () => {
         name: "disabled",
         type: { text: "boolean" },
       });
+      expect(manifest.modules[0].declarations[0]).not.toHaveProperty("modulePath");
+      expect(manifest.modules[0].declarations[0]).not.toHaveProperty("definitionPath");
     } finally {
       rmSync(outdir, { recursive: true, force: true });
     }
