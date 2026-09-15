@@ -1,5 +1,11 @@
 # @wc-toolkit/react-wrappers
 
+## 1.2.11
+
+### Patch Changes
+
+- 432bf0b: Keep React wrapper metadata out of the source Custom Elements Manifest.
+
 ## 1.2.10
 
 ### Patch Changes
