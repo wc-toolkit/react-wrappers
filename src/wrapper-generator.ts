@@ -116,8 +116,12 @@ function updateConfig(options: ReactWrapperOptions) {
 function getFormattedComponentName(component: Component) {
   return (
     config.componentNameFormatter?.(component.tagName!, component.name) ||
-    component.name
+    (isCssOnlyComponent(component) ? toPascalCase(component.tagName!) : component.name)
   );
+}
+
+function isCssOnlyComponent(component: Component) {
+  return component.superclass?.name === "HTMLUnknownElement";
 }
 
 function generateReactWrapper(
@@ -474,24 +478,34 @@ function getTypeDefinitionTemplate(
     attributes,
     events,
     properties,
+    isCssOnlyComponent(component),
   );
   const eventTypes = getEventDetailImportTypes(component);
   const formattedComponentName = getFormattedComponentName(component);
+  const cssOnly = isCssOnlyComponent(component);
   return `
     import React from "react";
-    import {
+    ${
+      cssOnly
+        ? `export type ${formattedComponentName}Element = HTMLUnknownElement;`
+        : `import {
       ${config.defaultExport ? "default" : component.name} as ${
-        formattedComponentName
-      }Element
+          formattedComponentName
+        }Element
       ${eventTypes?.length ? `, ${eventTypes}` : ""}
-    } from '${modulePath}';
+    } from '${modulePath}';`
+    }
 
     ${config.stronglyTypedEvents ? getStronglyTypedEvents(component, formattedComponentName) : ""}
 
-    export type {
+    ${
+      cssOnly
+        ? ""
+        : `export type {
       ${formattedComponentName}Element
       ${eventTypes?.length ? `, ${eventTypes}` : ""}
-    };
+    };`
+    }
 
     export interface ${formattedComponentName}Props ${getExtendedProps()} {
       ${props}
@@ -631,10 +645,11 @@ function getPropsInterface(
   attributes: MappedAttribute[],
   events: EventName[],
   properties?: ClassField[],
+  cssOnly = false,
 ) {
   return [
     ...getBooleanPropsTemplate(booleanAttributes),
-    ...getAttributePropsTemplate(attributes, componentName),
+    ...getAttributePropsTemplate(attributes, componentName, cssOnly),
     ...getPropertyPropsTemplate(properties, componentName),
     ...getEventPropsTemplate(events, componentName),
     ...getGlobalEventPropsTemplate(),
@@ -680,16 +695,19 @@ function getBooleanPropsTemplate(booleanAttributes: MappedAttribute[]) {
 function getAttributePropsTemplate(
   attributes: MappedAttribute[],
   componentName: string,
+  cssOnly = false,
 ) {
   return (
     (attributes || []).map((attr) => {
       return `
       /** ${attr.description} */
       ${attr.fieldName}?: ${
-        attr.type?.text.includes("{ELEMENT_NAME}")
+        attr.type?.text?.includes("{ELEMENT_NAME}")
           ? attr.type?.text.replace("{ELEMENT_NAME}", `${componentName}Element`)
           : MAPPED_PROPS.some((base) => base.propName === attr.fieldName)
             ? attr.type?.text || "string"
+            : cssOnly
+              ? attr.type?.text || "string"
             : `${componentName}Element['${attr.fieldName}']`
       };
     `;

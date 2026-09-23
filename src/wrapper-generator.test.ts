@@ -233,4 +233,91 @@ describe("generateReactWrappers", () => {
     );
     expect(types).toMatch(/import \{[^}]*MyDetail[^}]*\} from/);
   });
+
+  it("generates wrappers for CSS-only CEM declarations without importing a class", () => {
+    const outdir = createTempDir();
+
+    generateReactWrappers(
+      {
+        schemaVersion: "1.0.0",
+        modules: [
+          {
+            kind: "javascript-module",
+            path: "src/my-badge.css",
+            declarations: [
+              {
+                kind: "class",
+                name: "my-badge",
+                tagName: "my-badge",
+                customElement: true,
+                superclass: { name: "HTMLUnknownElement" },
+                attributes: [
+                  {
+                    name: "tone",
+                    type: { text: '"neutral" | "loud"' },
+                    description: "The badge tone.",
+                  },
+                ],
+                cssProperties: [
+                  { name: "--badge-color", description: "Badge color." },
+                ],
+                slots: [{ name: "icon", description: "Optional icon." }],
+              },
+            ],
+            exports: [],
+          },
+        ],
+      },
+      { outdir, modulePath: () => "./my-badge.css" },
+    );
+
+    const wrapper = fs.readFileSync(path.join(outdir, "MyBadge.js"), "utf8");
+    const types = fs.readFileSync(path.join(outdir, "MyBadge.d.ts"), "utf8");
+
+    expect(wrapper).toContain('import "./my-badge.css";');
+    expect(wrapper).toContain('export const MyBadge = forwardRef');
+    expect(wrapper).toContain('"my-badge"');
+    expect(types).toContain("export type MyBadgeElement = HTMLUnknownElement;");
+    expect(types).toContain('tone?: "neutral" | "loud";');
+    expect(types).toContain('"--badge-color"?: string | number;');
+    expect(types).toContain("Optional icon.");
+    expect(types).not.toContain("import { my-badge");
+    expect(types).not.toContain("from './my-badge.css'");
+  });
+
+  it("applies the component name formatter to CSS-only declarations", () => {
+    const outdir = createTempDir();
+
+    generateReactWrappers(
+      {
+        schemaVersion: "1.0.0",
+        modules: [
+          {
+            kind: "javascript-module",
+            path: "src/my-badge.css",
+            declarations: [
+              {
+                kind: "class",
+                name: "my-badge",
+                tagName: "my-badge",
+                customElement: true,
+                superclass: { name: "HTMLUnknownElement" },
+              },
+            ],
+            exports: [],
+          },
+        ],
+      },
+      {
+        outdir,
+        modulePath: () => "./my-badge.css",
+        componentNameFormatter: () => "BadgeWrapper",
+      },
+    );
+
+    expect(fs.existsSync(path.join(outdir, "BadgeWrapper.js"))).toBe(true);
+    expect(fs.readFileSync(path.join(outdir, "BadgeWrapper.js"), "utf8")).toContain(
+      "export const BadgeWrapper",
+    );
+  });
 });
