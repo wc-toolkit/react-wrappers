@@ -1,5 +1,11 @@
 # @wc-toolkit/react-wrappers
 
+## 1.2.12
+
+### Patch Changes
+
+- 8ddddb1: Support generating valid React wrappers and type definitions from CSS-only custom element declarations in a Custom Elements Manifest.
+
 ## 1.2.11
 
 ### Patch Changes
