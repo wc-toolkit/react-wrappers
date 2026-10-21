@@ -1,5 +1,11 @@
 # @wc-toolkit/react-wrappers
 
+## 1.2.13
+
+### Patch Changes
+
+- 75b10c3: Avoid mutating input manifests and generate CSS-only wrappers without importing runtime modules; quote CSS-only bare union values in emitted types.
+
 ## 1.2.12
 
 ### Patch Changes
