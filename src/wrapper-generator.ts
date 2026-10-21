@@ -54,10 +54,14 @@ export function generateReactWrappers(
   log.default("[react-wrappers] - Generating wrappers...");
 
   updateConfig(options);
-  const components = getAllComponents(
-    customElementsManifest as Package,
-    config.exclude,
-  );
+  const packageManifest = structuredClone(customElementsManifest as Package);
+  const components = getAllComponents(packageManifest, config.exclude)
+    .filter((component) => !config.exclude?.includes(component.name))
+    .map((component) =>
+      isCssOnlyDeclaration(component, packageManifest)
+        ? { ...component, superclass: { name: "HTMLUnknownElement" } }
+        : component,
+    );
   createOutDir(config.outdir!);
   saveReactUtils(config.outdir!, config.ssrSafe);
   if (config.scopedTags) {
@@ -70,14 +74,18 @@ export function generateReactWrappers(
       ...component,
       attributes: component.attributes?.map((attribute) => ({ ...attribute })),
     };
-    const { booleanAttributes, attributes } = getAttributes(componentForGeneration);
-    const properties = getProperties(component, attributes, booleanAttributes);
-    const componentModulePath = getModulePath(
-      config.modulePath,
-      component,
-      config.outdir!,
-      packageJson,
+    const { booleanAttributes, attributes } = getAttributes(
+      componentForGeneration,
     );
+    const properties = getProperties(component, attributes, booleanAttributes);
+    const componentModulePath = isCssOnlyComponent(component)
+      ? ""
+      : getModulePath(
+          config.modulePath,
+          component,
+          config.outdir!,
+          packageJson,
+        );
 
     generateReactWrapper(
       component,
@@ -116,12 +124,39 @@ function updateConfig(options: ReactWrapperOptions) {
 function getFormattedComponentName(component: Component) {
   return (
     config.componentNameFormatter?.(component.tagName!, component.name) ||
-    (isCssOnlyComponent(component) ? toPascalCase(component.tagName!) : component.name)
+    (isCssOnlyComponent(component)
+      ? toPascalCase(component.tagName!)
+      : component.name)
   );
 }
 
 function isCssOnlyComponent(component: Component) {
   return component.superclass?.name === "HTMLUnknownElement";
+}
+
+function isCssOnlyDeclaration(component: Component, manifest: Package) {
+  if (isCssOnlyComponent(component)) return true;
+  if (!component.name || !component.tagName) return false;
+  if (
+    component.name === component.tagName ||
+    !/^[A-Za-z_$][\w$]*$/.test(component.name)
+  ) {
+    return true;
+  }
+  const module = manifest.modules.find(
+    (candidate) =>
+      candidate.path === component.modulePath &&
+      candidate.declarations?.some(
+        (declaration) => declaration.name === component.name,
+      ),
+  );
+  if (!module) return false;
+  return !module.exports?.some(
+    (declaration) =>
+      declaration.kind === "js" &&
+      (declaration.name === component.name ||
+        declaration.declaration.name === component.name),
+  );
 }
 
 function generateReactWrapper(
@@ -259,7 +294,9 @@ function getPropIdentifiers({
   propName,
   originalName,
 }: Partial<PropLike>) {
-  return [...new Set([name, fieldName, propName, originalName].filter(Boolean))] as string[];
+  return [
+    ...new Set([name, fieldName, propName, originalName].filter(Boolean)),
+  ] as string[];
 }
 
 function hasIdentifierConflict(
@@ -378,7 +415,8 @@ function getAttributeTemplates(attributes: MappedAttribute[]) {
 
 function getPropTemplates(properties?: ClassField[]) {
   return properties?.map(
-    (member) => `useProperties(ref, '${member.name}', ${getMappedPropName(member.name)});`,
+    (member) =>
+      `useProperties(ref, '${member.name}', ${getMappedPropName(member.name)});`,
   );
 }
 
@@ -406,7 +444,7 @@ function getReactComponentTemplate(
     import React, { forwardRef ${
       config.ssrSafe ? ", useEffect" : ""
     }, useRef ${config.scopedTags ? ", useContext" : ""} } from "react";
-    ${!config.ssrSafe ? `import '${modulePath}';` : ""}
+    ${!config.ssrSafe && !isCssOnlyComponent(component) ? `import '${modulePath}';` : ""}
     import {
       ${has(eventTemplates) ? "useEventListener," : ""}
       ${has(propTemplates) ? "useProperties," : ""}
@@ -428,7 +466,7 @@ function getReactComponentTemplate(
       ${config.scopedTags ? "const scope = useContext(ScopeContext);" : ""}
 
       ${
-        config.ssrSafe
+        config.ssrSafe && !isCssOnlyComponent(component)
           ? `
       /** Waits for the client before loading the custom element */
       useEffect(() => {
@@ -487,11 +525,11 @@ function getTypeDefinitionTemplate(
     import React from "react";
     ${
       cssOnly
-        ? `export type ${formattedComponentName}Element = HTMLUnknownElement;`
+        ? `export type ${formattedComponentName}Element = HTMLElement;`
         : `import {
       ${config.defaultExport ? "default" : component.name} as ${
-          formattedComponentName
-        }Element
+        formattedComponentName
+      }Element
       ${eventTypes?.length ? `, ${eventTypes}` : ""}
     } from '${modulePath}';`
     }
@@ -662,8 +700,8 @@ function getUnusedProps(
   properties?: ClassField[],
 ) {
   return [
-    ...[...(booleanAttributes || []), ...(attributes || [])].map(
-      (x) => x.fieldName === "for" ? "htmlFor" : x.fieldName,
+    ...[...(booleanAttributes || []), ...(attributes || [])].map((x) =>
+      x.fieldName === "for" ? "htmlFor" : x.fieldName,
     ),
     ...(properties || []).map((x) => x.name),
   ]?.filter(
@@ -707,12 +745,41 @@ function getAttributePropsTemplate(
           : MAPPED_PROPS.some((base) => base.propName === attr.fieldName)
             ? attr.type?.text || "string"
             : cssOnly
-              ? attr.type?.text || "string"
-            : `${componentName}Element['${attr.fieldName}']`
+              ? normalizeCssUnion(attr.type?.text || "string")
+              : `${componentName}Element['${attr.fieldName}']`
       };
     `;
     }) || []
   );
+}
+
+function normalizeCssUnion(type: string) {
+  const tsTypes = new Set([
+    "any",
+    "bigint",
+    "boolean",
+    "false",
+    "never",
+    "null",
+    "number",
+    "object",
+    "string",
+    "symbol",
+    "this",
+    "true",
+    "undefined",
+    "unknown",
+    "void",
+  ]);
+  return type
+    .split("|")
+    .map((member) => {
+      const value = member.trim();
+      return /^[a-z][\w-]*$/.test(value) && !tsTypes.has(value)
+        ? JSON.stringify(value)
+        : value;
+    })
+    .join(" | ");
 }
 
 function getPropertyPropsTemplate(
