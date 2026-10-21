@@ -134,6 +134,25 @@ describe("generateReactWrappers", () => {
     ).toBe("@scope/components/button");
   });
 
+  it("resolves scoped file module paths relative to the output directory", () => {
+    const outdir = createTempDir();
+    const modulePath = getModulePath(
+      undefined,
+      {
+        name: "MyButton",
+        tagName: "my-button",
+        modulePath: "@scope/components/button.js",
+        customElement: true,
+      },
+      outdir,
+      {},
+    );
+
+    expect(modulePath).not.toBe("@scope/components/button.js");
+    expect(modulePath).toMatch(/@scope\/components\/button\.js$/);
+    expect(modulePath.startsWith(".")).toBe(true);
+  });
+
   it("maps className to the host class attribute", () => {
     const outdir = createTempDir();
 
