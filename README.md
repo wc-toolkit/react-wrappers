@@ -235,6 +235,12 @@ All options work with both `reactWrapperPlugin()` and `generateReactWrappers()`.
 | `debug`         | `boolean`                        | `false`       | Enable detailed logging                             |
 | `skip`          | `boolean`                        | `false`       | Skip generation (useful for conditional execution)  |
 
+When `modulePath` is not a callback, file-like CEM module paths are made relative to `outdir`. Bare package names and scoped package specifiers are preserved. A `modulePath` callback receives the CEM module path and its result is used as-is.
+
+### CSS-only custom elements
+
+A declaration is treated as CSS-only when it has no named JavaScript export, has an invalid/equal-to-tag class name, or is marked with `HTMLUnknownElement`. Its wrapper/type name is derived from the tag (for example, `zd-flex` becomes `ZdFlex`), its element type is `HTMLElement`, and attributes use their own CEM types. Bare union values such as `row | column` are emitted as string literals. CSS-only wrappers do not import the style/module path for side effects or import an element class. They can be excluded with `exclude`.
+
 ### Type Safety Options
 
 | Option                | Type                  | Default | Description                                                    |

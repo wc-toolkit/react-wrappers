@@ -5,7 +5,7 @@ import { saveFile } from "./utils";
 import { toPascalCase } from "@wc-toolkit/cem-utilities";
 import { Component } from "@wc-toolkit/cem-utilities";
 
-// 
+//
 export function getPackageJson() {
   const packageJsonPath = path.join(process.cwd(), "package.json");
   return JSON.parse(fs.readFileSync(packageJsonPath).toString());
@@ -21,6 +21,10 @@ export function getModulePath(
 ) {
   if (modulePath instanceof Function) {
     return modulePath(component.name, component.tagName!, component.modulePath);
+  }
+
+  if (component.modulePath && !looksLikeFilePath(component.modulePath)) {
+    return component.modulePath;
   }
 
   if (component.modulePath && looksLikeFilePath(component.modulePath)) {
@@ -41,7 +45,13 @@ export function getModulePath(
 }
 
 function looksLikeFilePath(value: string): boolean {
-  return path.isAbsolute(value) || value.startsWith(".") || value.includes("/") || /\.[cm]?[jt]sx?$/.test(value);
+  if (value.startsWith("@") && !/\.[cm]?[jt]sx?$/.test(value)) return false;
+  return (
+    path.isAbsolute(value) ||
+    value.startsWith(".") ||
+    value.includes("/") ||
+    /\.[cm]?[jt]sx?$/.test(value)
+  );
 }
 
 export const createEventName = (event: any) => `on${toPascalCase(event.name)}`;
